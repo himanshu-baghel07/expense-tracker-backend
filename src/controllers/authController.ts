@@ -61,3 +61,72 @@ export const register = async (
     });
   }
 };
+
+export const login = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { email, password } = req.body as {
+      email?: string;
+      password?: string;
+    };
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide all required field:email and Password",
+      });
+    }
+
+    const user = await User.findOne({ email }).select("+password");
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid Credentials",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
+    }
+
+    const token = generateToken(user._id.toString());
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Login successful", token });
+  } catch (error) {
+    console.error("Login Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
+// export const logout =async (req:Request,res:Response):Promise<Response>=>{
+// try {
+//   const authHeader = req.headers.authorization;
+
+//     if (!authHeader || !authHeader.startsWith("Bearer ")) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Refresh token is required in Authorization header",
+//       });
+//     }
+
+//         const token = authHeader.split(" ")[1];
+
+//          await RefreshTokenModel.deleteOne({ token: token });
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Logged out successfully",
+//     });
+
+// } catch (error) {
+
+// }
+// }
