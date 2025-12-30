@@ -4,6 +4,11 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
+  profile?: {
+    avatar?: string | null;
+    currency?: string;
+    monthlyBudget?: number | null;
+  };
   createdAt?: Date;
   updatedAt?: Date;
 }
