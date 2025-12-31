@@ -4,6 +4,11 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
+  profile?: {
+    avatar?: string | null;
+    currency?: string;
+    monthlyBudget?: number | null;
+  };
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -27,4 +32,22 @@ export interface ICategory extends Document {
   userId: Types.ObjectId;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+export interface RegisterData {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export interface LoginData {
+  email: string;
+  password: string;
+}
+
+export interface AuthResult {
+  success: boolean;
+  message: string;
+  token?: string;
+  user?: Partial<IUser>;
 }

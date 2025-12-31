@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { IUser } from "./types.js";
+import { IUser } from "../types/types.js";
 
 const userSchema = new Schema<IUser>(
   {
@@ -9,23 +9,44 @@ const userSchema = new Schema<IUser>(
       minlength: 2,
       trim: true,
     },
+
     email: {
       type: String,
       required: true,
-      lowercase: true,
       unique: true,
+      lowercase: true,
       trim: true,
+      index: true,
     },
+
     password: {
       type: String,
       required: true,
       minlength: 6,
       select: false,
     },
+
+    profile: {
+      avatar: {
+        type: String,
+        default: null,
+      },
+
+      currency: {
+        type: String,
+        default: "INR",
+      },
+
+      monthlyBudget: {
+        type: Number,
+        default: null,
+      },
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
 const User = mongoose.model<IUser>("User", userSchema);
-
 export default User;
