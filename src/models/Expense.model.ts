@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { IExpense } from "../types/types.js";
+import { IExpense } from "../types/auth.types.js";
 
 const expenseSchema = new Schema<IExpense>(
   {

@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt, { SignOptions } from "jsonwebtoken";
 import User from "../models/user.model.js";
-import { AuthResult, LoginData, RegisterData } from "../types/types.js";
+import { AuthResult, LoginData, RegisterData } from "../types/index.js";
 
 const generateToken = (userId: string): string => {
   const secret = process.env.JWT_SECRET as string;
@@ -30,7 +30,7 @@ export const register = async (userData: RegisterData): Promise<AuthResult> => {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   // Create user
-  const newUser = await User.create({
+  await User.create({
     name,
     email,
     password: hashedPassword,
@@ -39,11 +39,6 @@ export const register = async (userData: RegisterData): Promise<AuthResult> => {
   return {
     success: true,
     message: "User registered successfully",
-    user: {
-      _id: newUser._id,
-      name: newUser.name,
-      email: newUser.email,
-    },
   };
 };
 
@@ -75,12 +70,7 @@ export const login = async (loginData: LoginData): Promise<AuthResult> => {
     success: true,
     message: "Login successful",
     token,
-    user: {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      profile: user.profile,
-    },
+    id: user._id.toString(),
   };
 };
 

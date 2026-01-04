@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { IUser } from "../types/types.js";
+import { IUser } from "../types/auth.types.js";
 
 const userSchema = new Schema<IUser>(
   {
@@ -9,7 +9,6 @@ const userSchema = new Schema<IUser>(
       minlength: 2,
       trim: true,
     },
-
     email: {
       type: String,
       required: true,
