@@ -5,7 +5,7 @@ export const getProfileDetails = async (
   data: GetProfileDetailsInput
 ): Promise<UserResponse> => {
   try {
-    const user = await User.findById(data.id);
+    const user = await User.findById(data.id).select("-password");
 
     if (!user) {
       return {
