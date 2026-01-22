@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt, { SignOptions } from "jsonwebtoken";
-import User from "../models/user.model.js";
+import User from "../models/User.model.js";
 import { AuthResult, LoginData, RegisterData } from "../types/index.js";
 
 const generateToken = (userId: string): string => {
