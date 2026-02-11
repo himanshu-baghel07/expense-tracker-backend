@@ -8,6 +8,8 @@ export interface UpdateProfileInput {
   id: string;
   name?: string;
   email?: string;
+  currency?: string;
+  monthlyBudget?: number;
 }
 
 export interface UserResponse {
