@@ -1,10 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { IExpense } from "../types/expense.types.js";
 
-/**
- * Mongoose schema for Expense model
- * Implements requirements 7.1-7.6 from the expense management API spec
- */
 const expenseSchema = new Schema<IExpense>(
   {
     userId: {

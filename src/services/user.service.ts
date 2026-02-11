@@ -7,7 +7,7 @@ import {
   UpdateProfileInput,
   UserResponse,
 } from "../types/index.js";
-import { uploadImage } from "./upload.service.js";
+import { deleteImage, uploadImage } from "./upload.service.js";
 
 export const getProfileDetails = async (
   data: GetProfileDetailsInput,
