@@ -13,18 +13,6 @@ export interface IUser extends Document {
   updatedAt?: Date;
 }
 
-export interface IExpense extends Document {
-  title: string;
-  amount: number;
-  type: "income" | "expense";
-  category: string;
-  date: Date;
-  userId: Types.ObjectId;
-  notes?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
 export interface ICategory extends Document {
   name: string;
   icon?: string;
