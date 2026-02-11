@@ -2,13 +2,11 @@ import fs from "fs";
 import multer from "multer";
 import path from "path";
 
-// Create uploads/temp directory if it doesn't exist
 const uploadDir = "uploads/temp/";
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Configure multer for temporary local storage
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     cb(null, uploadDir);
@@ -38,6 +36,6 @@ const fileFilter = (_req: any, file: any, cb: multer.FileFilterCallback) => {
 
 export const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: fileFilter,
 });
