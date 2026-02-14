@@ -9,8 +9,47 @@ import {
   MonthlyTrend,
   PaginationMeta,
   ServiceResult,
+  TimeFilter,
+  TrendData,
+  TrendPeriod,
   UpdateExpenseData,
 } from "../types/expense.types.js";
+
+/**
+ * Helper function to calculate date range based on time filter
+ * @param timeFilter - Quick time filter (24h, 7d, 30d, 90d, all)
+ * @returns Object with startDate and endDate, or undefined for 'all'
+ */
+const calculateDateRange = (
+  timeFilter?: TimeFilter,
+): { startDate?: Date; endDate?: Date } => {
+  if (!timeFilter || timeFilter === "all") {
+    return {};
+  }
+
+  const now = new Date();
+  const endDate = now;
+  let startDate: Date;
+
+  switch (timeFilter) {
+    case "24h":
+      startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      break;
+    case "7d":
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case "30d":
+      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    case "90d":
+      startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      break;
+    default:
+      return {};
+  }
+
+  return { startDate, endDate };
+};
 
 /**
  * Create a new expense
@@ -574,6 +613,7 @@ export const getExpenseSummary = async (
  */
 export const getCategoryChartData = async (
   userId: string,
+  timeFilter?: TimeFilter,
   startDate?: Date,
   endDate?: Date,
 ): Promise<ServiceResult<CategoryData[]>> => {
@@ -587,33 +627,54 @@ export const getCategoryChartData = async (
       };
     }
 
+    // Validate timeFilter if provided
+    if (
+      timeFilter &&
+      !["24h", "7d", "30d", "90d", "all"].includes(timeFilter)
+    ) {
+      return {
+        success: false,
+        message:
+          "Invalid time filter. Must be '24h', '7d', '30d', '90d', or 'all'",
+        statusCode: 400,
+      };
+    }
+
+    // Calculate date range from timeFilter if provided, otherwise use custom dates
+    let dateRange: { startDate?: Date; endDate?: Date };
+    if (timeFilter) {
+      dateRange = calculateDateRange(timeFilter);
+    } else {
+      dateRange = { startDate, endDate };
+    }
+
     // Build aggregation pipeline
     const pipeline: any[] = [];
 
-    // Match stage: filter by userId and optional date range (Requirement 4.3)
+    // Match stage: filter by userId and optional date range
     const matchStage: any = {
       userId: new Types.ObjectId(userId),
     };
 
     // Apply date range filter if provided
-    if (startDate || endDate) {
+    if (dateRange.startDate || dateRange.endDate) {
       matchStage.date = {};
-      if (startDate) {
-        matchStage.date.$gte = startDate;
+      if (dateRange.startDate) {
+        matchStage.date.$gte = dateRange.startDate;
       }
-      if (endDate) {
-        matchStage.date.$lte = endDate;
+      if (dateRange.endDate) {
+        matchStage.date.$lte = dateRange.endDate;
       }
     }
 
     pipeline.push({ $match: matchStage });
 
-    // Group stage: group by category and calculate totals (Requirements 4.1, 4.2)
+    // Group stage: group by category and calculate totals
     pipeline.push({
       $group: {
         _id: "$category",
-        totalAmount: { $sum: "$amount" }, // Requirement 4.1
-        count: { $sum: 1 }, // Requirement 4.2
+        totalAmount: { $sum: "$amount" },
+        count: { $sum: 1 },
       },
     });
 
@@ -627,12 +688,12 @@ export const getCategoryChartData = async (
       },
     });
 
-    // Sort stage: sort by totalAmount descending (Requirement 4.4)
+    // Sort stage: sort by totalAmount descending
     pipeline.push({
       $sort: { totalAmount: -1 },
     });
 
-    // Execute aggregation pipeline (Requirement 4.5)
+    // Execute aggregation pipeline
     const result = await Expense.aggregate(pipeline).exec();
 
     return {
@@ -740,6 +801,194 @@ export const getMonthlyTrend = async (
     return {
       success: false,
       message: "Failed to retrieve monthly trend data",
+      statusCode: 500,
+    };
+  }
+};
+
+/**
+ * Get trend data with flexible period grouping (weekly, monthly, yearly)
+ * Supports weekly, monthly, and yearly aggregation of expenses
+ *
+ * @param userId - User ID to filter expenses
+ * @param period - Grouping period: "weekly", "monthly", or "yearly" (defaults to "monthly")
+ * @param startDate - Optional start date filter
+ * @param endDate - Optional end date filter
+ * @returns ServiceResult with TrendData array or error
+ */
+export const getTrendData = async (
+  userId: string,
+  period: TrendPeriod = "monthly",
+  startDate?: Date,
+  endDate?: Date,
+): Promise<ServiceResult<TrendData[]>> => {
+  try {
+    // Validate userId format
+    if (!Types.ObjectId.isValid(userId)) {
+      return {
+        success: false,
+        message: "Invalid user ID format",
+        statusCode: 400,
+      };
+    }
+
+    // Validate period
+    if (!["weekly", "monthly", "yearly"].includes(period)) {
+      return {
+        success: false,
+        message: "Invalid period. Must be 'weekly', 'monthly', or 'yearly'",
+        statusCode: 400,
+      };
+    }
+
+    // Build aggregation pipeline
+    const pipeline: any[] = [];
+
+    // Match stage: filter by userId and optional date range
+    const matchStage: any = {
+      userId: new Types.ObjectId(userId),
+    };
+
+    // Apply date range filter if provided
+    if (startDate || endDate) {
+      matchStage.date = {};
+      if (startDate) {
+        matchStage.date.$gte = startDate;
+      }
+      if (endDate) {
+        matchStage.date.$lte = endDate;
+      }
+    }
+
+    pipeline.push({ $match: matchStage });
+
+    // Group stage: varies based on period
+    let groupStage: any;
+    let projectStage: any;
+
+    switch (period) {
+      case "weekly":
+        // Group by year and ISO week
+        groupStage = {
+          $group: {
+            _id: {
+              year: { $isoWeekYear: "$date" },
+              week: { $isoWeek: "$date" },
+            },
+            totalAmount: { $sum: "$amount" },
+            count: { $sum: 1 },
+          },
+        };
+
+        projectStage = {
+          $project: {
+            _id: 0,
+            year: "$_id.year",
+            week: "$_id.week",
+            period: {
+              $concat: [
+                { $toString: "$_id.year" },
+                "-W",
+                {
+                  $cond: {
+                    if: { $lt: ["$_id.week", 10] },
+                    then: { $concat: ["0", { $toString: "$_id.week" }] },
+                    else: { $toString: "$_id.week" },
+                  },
+                },
+              ],
+            },
+            totalAmount: 1,
+            count: 1,
+          },
+        };
+
+        pipeline.push(groupStage, projectStage);
+        pipeline.push({ $sort: { year: 1, week: 1 } });
+        break;
+
+      case "monthly":
+        // Group by year and month
+        groupStage = {
+          $group: {
+            _id: {
+              year: { $year: "$date" },
+              month: { $month: "$date" },
+            },
+            totalAmount: { $sum: "$amount" },
+            count: { $sum: 1 },
+          },
+        };
+
+        projectStage = {
+          $project: {
+            _id: 0,
+            year: "$_id.year",
+            month: "$_id.month",
+            period: {
+              $concat: [
+                { $toString: "$_id.year" },
+                "-",
+                {
+                  $cond: {
+                    if: { $lt: ["$_id.month", 10] },
+                    then: { $concat: ["0", { $toString: "$_id.month" }] },
+                    else: { $toString: "$_id.month" },
+                  },
+                },
+              ],
+            },
+            totalAmount: 1,
+            count: 1,
+          },
+        };
+
+        pipeline.push(groupStage, projectStage);
+        pipeline.push({ $sort: { year: 1, month: 1 } });
+        break;
+
+      case "yearly":
+        // Group by year only
+        groupStage = {
+          $group: {
+            _id: {
+              year: { $year: "$date" },
+            },
+            totalAmount: { $sum: "$amount" },
+            count: { $sum: 1 },
+          },
+        };
+
+        projectStage = {
+          $project: {
+            _id: 0,
+            year: "$_id.year",
+            period: { $toString: "$_id.year" },
+            totalAmount: 1,
+            count: 1,
+          },
+        };
+
+        pipeline.push(groupStage, projectStage);
+        pipeline.push({ $sort: { year: 1 } });
+        break;
+    }
+
+    // Execute aggregation pipeline
+    const result = await Expense.aggregate(pipeline).exec();
+
+    return {
+      success: true,
+      message: `${period.charAt(0).toUpperCase() + period.slice(1)} trend data retrieved successfully`,
+      data: result,
+      statusCode: 200,
+    };
+  } catch (error: any) {
+    console.error("Error retrieving trend data:", error);
+
+    return {
+      success: false,
+      message: "Failed to retrieve trend data",
       statusCode: 500,
     };
   }

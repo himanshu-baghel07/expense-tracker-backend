@@ -23,7 +23,10 @@ router.get("/summary", authenticateToken, getExpenseSummary);
 // GET /api/expenses/chart/category - Get category chart data
 router.get("/chart/category", authenticateToken, getCategoryChartData);
 
-// GET /api/expenses/chart/monthly - Get monthly trend data
+// GET /api/expenses/chart/trend - Get trend data (weekly, monthly, yearly)
+router.get("/chart/trend", authenticateToken, getTrendData);
+
+// GET /api/expenses/chart/monthly - Get monthly trend data (legacy, kept for backward compatibility)
 router.get("/chart/monthly", authenticateToken, getMonthlyTrend);
 
 // CRUD routes
