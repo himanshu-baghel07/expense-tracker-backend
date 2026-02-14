@@ -7,6 +7,7 @@ import {
   getExpenseList,
   getExpenseSummary,
   getMonthlyTrend,
+  getTrendData,
   updateExpense,
 } from "../controllers/expense.controller.js";
 import { authenticateToken } from "../middleware/auth.middleware.js";
