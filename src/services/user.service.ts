@@ -7,7 +7,7 @@ import {
   UpdateProfileInput,
   UserResponse,
 } from "../types/index.js";
-import { uploadImage } from "./upload.service.js";
+import { deleteImage, uploadImage } from "./upload.service.js";
 
 export const getProfileDetails = async (
   data: GetProfileDetailsInput,
@@ -70,9 +70,26 @@ export const updateProfile = async (
     if (data.monthlyBudget !== undefined)
       user.profile.monthlyBudget = data.monthlyBudget;
 
-    // Handle file upload
+    // Handle avatar upload/deletion
     if (file) {
       try {
+        // Delete old avatar from Cloudinary if exists
+        if (user.profile.avatar) {
+          const publicIdMatch = user.profile.avatar.match(
+            /expense-tracker\/([^/]+)\.[^.]+$/,
+          );
+          if (publicIdMatch) {
+            const publicId = `expense-tracker/${publicIdMatch[1]}`;
+            try {
+              await deleteImage(publicId);
+            } catch (deleteError) {
+              console.error("Failed to delete old avatar:", deleteError);
+              // Continue with upload even if deletion fails
+            }
+          }
+        }
+
+        // Upload new avatar
         const uploadResult = await uploadImage(file);
 
         // Delete local file after successful upload

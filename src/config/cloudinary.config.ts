@@ -10,7 +10,6 @@ cloudinary.config({
   timeout: 60000,
 });
 
-// Test configuration
 if (!process.env.CLOUDINARY_API_KEY) {
   console.error("CLOUDINARY_API_KEY is not set in environment variables");
 }

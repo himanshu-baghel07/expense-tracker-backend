@@ -2,7 +2,6 @@ import cors from "cors";
 import express, { Application } from "express";
 import authRoute from "./routes/auth.routes.js";
 import expenseRoutes from "./routes/expense.routes.js";
-import uploadRoutes from "./routes/upload.routes.js";
 import userRoutes from "./routes/user.routes.js";
 
 const app: Application = express();
@@ -22,7 +21,6 @@ app.use((req, res, next) => {
 // Routes
 app.use("/api/auth", authRoute);
 app.use("/api/user", userRoutes);
-app.use("/api/upload", uploadRoutes);
 app.use("/api/expenses", expenseRoutes);
 
 export default app;

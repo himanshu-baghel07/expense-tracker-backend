@@ -90,6 +90,28 @@ export interface MonthlyTrend {
 }
 
 /**
+ * Trend data for time-series charts (weekly, monthly, yearly)
+ */
+export interface TrendData {
+  period: string; // e.g., "2024-W01", "2024-01", "2024"
+  year: number;
+  week?: number; // For weekly trends
+  month?: number; // For monthly trends
+  totalAmount: number;
+  count: number;
+}
+
+/**
+ * Trend period type
+ */
+export type TrendPeriod = "weekly" | "monthly" | "yearly";
+
+/**
+ * Time filter for quick date range selection
+ */
+export type TimeFilter = "24h" | "7d" | "30d" | "90d" | "all";
+
+/**
  * Standard API response structure
  */
 export interface ApiResponse<T = any> {
